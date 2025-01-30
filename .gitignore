@@ -1,0 +1,8 @@
+.venv
+
+data/plateau/citygml/**/*.gml
+
+.ipynb_checkpoints
+
+.DS_Store
+*.code-workspace
