@@ -9,7 +9,9 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11,<4"
 dependencies = [
-    "leafmap[maplibre] (>=0.42.9,<0.43.0)"
+    "leafmap[maplibre] (>=0.42.9,<0.43.0)",
+    "jupyterlab (>=4.3.5,<5.0.0)",
+    "python-geohash (>=0.8.5,<0.9.0)"
 ]
 
 
@@ -27,8 +29,6 @@ shapely = "^2.0.6"
 matplotlib = "^3.10.0"
 rasterio = "^1.4.3"
 contextily = "^1.6.2"
-python-geohash = "^0.8.5"
-jupyterlab = "^4.3.4"
 jupyterlab-code-formatter = "^3.0.2"
 black = "^24.10.0"
 isort = "^5.13.2"

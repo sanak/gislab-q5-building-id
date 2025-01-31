@@ -1,13 +1,15 @@
 site_name: 地理空間情報課ラボ - Q5 建物へのIDの付番 のアイデア
 site_description: ""
-site_url: https://sanak.github.io/geolab-q5-building-id
+site_url: https://sanak.github.io/gislab-q5-building-id
 
 theme:
   name: material
   language: ja
+  features:
+    - navigation.expand
 
-repo_name: sanak/geolab-q5-building-id
-repo_url: https://github.com/sanak/geolab-q5-building-id
+repo_name: sanak/gislab-q5-building-id
+repo_url: https://github.com/sanak/gislab-q5-building-id
 
 nav:
   - 概要: index.md

@@ -3,6 +3,8 @@
 docs/data/plateau/citygml/**/*.gml
 docs/notebooks/.ipynb_checkpoints
 
+site/
+
 *.pdf
 
 .DS_Store
