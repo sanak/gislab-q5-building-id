@@ -1,0 +1,30 @@
+site_name: 地理空間情報課ラボ - Q5 建物へのIDの付番 のアイデア
+site_description: ""
+site_url: https://sanak.github.io/geolab-q5-building-id
+
+theme:
+  name: material
+  language: ja
+
+repo_name: sanak/geolab-q5-building-id
+repo_url: https://github.com/sanak/geolab-q5-building-id
+
+nav:
+  - 概要: index.md
+  - 補足資料:
+    - Geohashを活用した建物IDの付番: notebooks/geohash_id.ipynb
+    - Geohashの桁数(精度)と矩形サイズの確認: notebooks/check_geohash_size.ipynb
+
+not_in_nav: |
+  data
+  results
+
+plugins:
+  - mkdocs-jupyter:
+      execute: false # true
+      ignore_h1_titles: true
+      ignore: [".ipynb_checkpoints/**/*.ipynb"]
+      include_requirejs: true
+  - exclude:
+      glob:
+        - notebooks/.ipynb_checkpoints

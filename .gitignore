@@ -1,8 +1,7 @@
 .venv
 
-data/plateau/citygml/**/*.gml
-
-.ipynb_checkpoints
+docs/data/plateau/citygml/**/*.gml
+docs/notebooks/.ipynb_checkpoints
 
 *.pdf
 
