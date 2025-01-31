@@ -10,17 +10,17 @@
 
 ## 変換手順
 
-1. `data/plateau` フォルダまで移動
+1. `data-tmp/plateau` フォルダまで移動
     ```bash
-    cd data/plateau
+    cd data-tmp/plateau
     ```
 2. PLATEAUのCityGMLデータのダウンロードと3次メッシュ4区画分を抽出
     ```bash
-    bash _scripts/download-and-extract-citygml.sh
+    bash download-and-extract-citygml.sh
     ```
 3. CityGMLのLOD0データをGeoPackageファイルに変換
     ```bash
-    bash _scripts/convert-citygml-to-geopackage.sh
+    bash convert-citygml-to-geopackage.sh
     ```
 
 ## 参考リンク:

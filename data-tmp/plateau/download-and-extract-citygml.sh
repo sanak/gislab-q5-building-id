@@ -3,7 +3,7 @@
 set -ex
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
-BASE_DIR=$SCRIPT_DIR/../citygml
+BASE_DIR=$SCRIPT_DIR/citygml
 
 # https://www.geospatial.jp/ckan/dataset/plateau
 ###############################################################################

@@ -1,6 +1,6 @@
 .venv
 
-docs/data/plateau/citygml/**/*.gml
+data-tmp/plateau/citygml/**/*.gml
 docs/notebooks/.ipynb_checkpoints
 
 site/

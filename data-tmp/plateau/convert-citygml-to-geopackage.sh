@@ -3,7 +3,7 @@
 set -ex
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
-BASE_DIR=$SCRIPT_DIR/../
+BASE_DIR=$SCRIPT_DIR
 
 cd $BASE_DIR
 
