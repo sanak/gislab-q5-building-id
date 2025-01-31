@@ -29,4 +29,5 @@ plugins:
       include_requirejs: true
   - exclude:
       glob:
+        - data/plateau/citygml/**/*.gml
         - notebooks/.ipynb_checkpoints
