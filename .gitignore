@@ -4,5 +4,7 @@ data/plateau/citygml/**/*.gml
 
 .ipynb_checkpoints
 
+*.pdf
+
 .DS_Store
 *.code-workspace

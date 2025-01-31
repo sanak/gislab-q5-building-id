@@ -1,6 +1,6 @@
 # 建物ポリゴンの代表点のGeohash値(11桁)による建物へのIDの付番
 
-建物ポリゴンの代表点(重心もしくはポリゴン内保証点)の経緯度座標を11桁(10-15cm)精度のGeohash値を建物のIDとして付番することでID自体のデータ量を11文字に抑えつつ、建物毎にユニークなIDを定義し、さらにIDから建物の位置を前方一致検索で逆引き可能にする。
+建物ポリゴンの代表点(重心もしくはポリゴン内保証点)の経緯度座標を11桁(10-15cm)精度のGeohash値に変換し、建物のIDとして付番することでID自体のデータ量を11文字に抑えつつ、建物毎にユニークなIDを定義し、さらにIDから建物の位置を前方一致検索で逆引き可能にする。
 
 ## 課題
 
@@ -12,7 +12,7 @@
 
 1. IDを付与するポイントとして、基本的には建物ポリゴンの重心(Centroid)を利用しつつ、ポリゴンが凹形状で重心が建物ポリゴン外に位置する場合のみ、ポリゴン内保証点(Point On Surface)を利用する。 \
    ポリゴン内保証点の算出アルゴリズムは、利用する幾何計算ライブラリによって異なると想定され、全ての建物ポリゴンに対して適用する場合、安定した座標値が得られないと考えられるが、凹形状で重心が建物ポリゴン外にある場合のみのフォールバックとして利用することで、全体として安定した座標値となることが期待される。
-2. 1.で算出した経緯度座標値の符号化については、Google社が開発の [Open Location Code (Plus Codes)](https://github.com/google/open-location-code/blob/main/Documentation/Specification/specification.md) や、Microsoft社が開発の [QuadKey](https://learn.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system?redirectedfrom=MSDN#tile-coordinates-and-quadkeys) 、Ubuntuを提供するCanonical社CTOのGustavo Niemeyerが開発した [Geohash](https://en.wikipedia.org/wiki/Geohash) などがあり、いずれも文字列の前方一致検索での位置特定が可能であるが、10cm程度の精度を実現する場合、Open Location Codeでは13桁、QuadKeyでは30-31桁程度必要となるため、本提案では、11桁で10-15cm精度の位置特定が可能なGeohashを採用する。
+2. 経緯度座標値の符号化については、Google社が開発の [Open Location Code (Plus Codes)](https://github.com/google/open-location-code/blob/main/Documentation/Specification/specification.md) や、Microsoft社が開発の [QuadKey](https://learn.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system?redirectedfrom=MSDN#tile-coordinates-and-quadkeys) 、Ubuntuを提供するCanonical社CTOのGustavo Niemeyerが開発した [Geohash](https://en.wikipedia.org/wiki/Geohash) などがあり、いずれも文字列の前方一致検索での位置特定が可能であるが、10cm程度の精度を実現する場合、Open Location Codeでは13桁、QuadKeyでは30-31桁程度必要となるため、本提案では、11桁で10-15cm精度の位置特定が可能なGeohashを採用する。
 
 ## 上記手法の利用シーン
 
