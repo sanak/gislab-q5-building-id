@@ -1,10 +1,13 @@
 .venv
 
 data-tmp/plateau/citygml/**/*.gml
+data-tmp/plateau/geopackage/*.gpkg
+data-tmp/plateau/geopackage/*.gpkg-*
 docs/notebooks/.ipynb_checkpoints
 
 site/
 
+*.qgz
 *.pdf
 
 .DS_Store
