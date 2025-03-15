@@ -1298,7 +1298,7 @@ print_geohash_size(11)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="">まとめ<a class="anchor-link" href="#">¶</a></h3><p>上記より、日本国内ではGeohashが10桁の場合、幅が0.84~1.09[m]、高さが0.595~0.599[m]、最小外接円半径が0.51~0.62[m]、Geohashが11桁の場合、幅が0.10~0.13[m]、高さが0.148~0.149[m]、最小外接円半径が0.091~0.100[m]となるが、例えばPLATEAUの建築物モデル（LOD0）では取得基準が「射影の短辺の実長 1m 以上」となっていて(<a href="https://www.mlit.go.jp/plateau/file/libraries/doc/plateau_doc_0001_ver04.pdf">PLATEAU仕様書リンク</a>)、最小で 1m の幅・奥行きの建物ポリゴンが存在する可能性があるため、Geohashの桁数については安全を取って11桁を採用する形とする。</p>
+<h3 id="">まとめ<a class="anchor-link" href="#">¶</a></h3><p>上記より、日本国内ではGeohashが10桁の場合、幅が0.84~1.09[m]、高さが0.595~0.599[m]、最小外接円半径が0.51~0.62[m]、Geohashが11桁の場合、幅が0.10~0.13[m]、高さが0.148~0.149[m]、最小外接円半径が0.091~0.100[m]となるが、例えばPLATEAUの建築物モデル（LOD0）では取得基準が「射影の短辺の実長 1m 以上」となっていて(<a href="https://www.mlit.go.jp/plateau/file/libraries/doc/plateau_doc_0001_ver04.pdf#page=28">PLATEAU仕様書リンク</a>)、最小で 1m の幅・奥行きの建物ポリゴンが存在する可能性があるため、Geohashの桁数については安全を取って11桁を採用する形とする。</p>
 <p>経緯度座標系で10cm程度の精度に必要な小数点以下桁数は6桁とされていて、例にある <code>45.522831, 141.936591</code> の場合に、記号(<code>.</code>, <code>,</code>, <code> </code>)を除いて固定長とした場合も、文字数は17桁必要となることから、17桁=&gt;11桁に十分圧縮できていると考える。</p>
 </div>
 </div>
