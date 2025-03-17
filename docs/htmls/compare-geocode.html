@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ジオコード種別・精度の比較</title>
+    <meta property="og:description" content="ジオコード種別・精度の比較" />
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src='https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <script src='https://unpkg.com/@maplibre/maplibre-gl-inspect@1.7.1/dist/maplibre-gl-inspect.js' rel='stylesheet' ></script>
+    <link href='https://unpkg.com/@maplibre/maplibre-gl-inspect@1.7.1/dist/maplibre-gl-inspect.css' rel='stylesheet' />
+    <script src='https://unpkg.com/latlon-geohash@1.1.0/latlon-geohash.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/openlocationcode/1.0.3/openlocationcode.js'></script>
+    <script type='module'>
+      import { tileMath } from 'https://unpkg.com/quadkey-tilemath@0.1.2/dist/index.es.js';
+      window.tileMath = tileMath;
+    </script>
+    <script src='https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js'></script>
+    <style>
+      body { margin: 0; padding: 0; }
+      html, body, #map { height: 100vh; }
+      .map-center-marker {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 30px;
+        pointer-events: none;
+      }
+      .map-overlay {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        position: absolute;
+        width: 220px;
+        top: 0;
+        left: 0;
+        padding: 10px;
+      }
+      .map-overlay .map-overlay-inner {
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .map-overlay-inner fieldset {
+        border: none;
+        padding: 0;
+        margin: 0 0 10px;
+      }
+      .map-overlay-inner fieldset:last-child {
+        margin: 0;
+      }
+      .map-overlay-inner fieldset.inline {
+        display: inline;
+      }
+      .map-overlay-inner fieldset input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div class="map-center-marker">+</div>
+    <div class="map-overlay top">
+      <div class="map-overlay-inner">
+        <fieldset class="inner">
+          <label for="type">種別:</label>
+          <select id="type">
+            <option value="geohash">Geohash</option>
+            <option value="olc">Open Location Code</option>
+            <option value="quadkey">Quadkey</option>
+            <option value="h3">H3</option>
+          </select>
+        </fieldset>
+        <fieldset class="inner">
+          <label for="precision">精度:</label>
+          <select id="precision"></select>
+        </fieldset>
+        <fieldset>
+          <label for="code-value">コード値:</label>
+          <input type="text" id="code-value" readonly>
+        </fieldset>
+        <fieldset>
+          <label for="center-coords">中心緯度,経度:</label>
+          <input type="text" id="center-coords" readonly>
+        </fieldset>
+      </div>
+    </div>
+  </body>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tile.openstreetmap.jp/styles/maptiler-basic-ja/style.json', // 地図のスタイル
+      center: [139.762, 35.675], // 中心座標
+      zoom: 19, // ズームレベル
+      minZoom: 4,
+      maxZoom: 21,
+      dragRotate: false,
+      attributionControl: false,
+    });
+    // ズーム
+    map.addControl(
+      new maplibregl.NavigationControl({
+        showCompass: false,
+      }),
+      'top-right',
+    );
+    // スケール表示
+    map.addControl(new maplibregl.ScaleControl({
+      maxWidth: 200,
+      unit: 'metric'
+    }));
+    // インスペクト(マウス位置の属性表示)
+    map.addControl(
+      new MaplibreInspect({
+        useInspectStyle: false,
+        popup: new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+        }),
+        queryParameters: {
+          layers: ['plateau-building-fill'],
+        }
+      }),
+    );
+    // アトリビューション表示
+    map.addControl(new maplibregl.AttributionControl({
+      compact: true,
+      customAttribution: '',
+    }));
+
+    map.on('load', () => {
+      // コントロールの初期化
+      updatePrecisionOption();
+
+      // PLATEAU建物ポリゴンの表示
+      map.addSource('plateau-building', {
+        type: 'geojson',
+        data: '../data/plateau/geojson/13100_tokyo_2023.geojson',
+        attribution: '<a href="https://www.geospatial.jp/ckan/dataset/plateau">3D都市モデルPLATEAU建築物モデル（国土交通省）</a><br>',
+      });
+      map.addLayer({
+        id: 'plateau-building-fill',
+        type: 'fill',
+        source: 'plateau-building',
+        layout: {},
+        paint: {
+          'fill-color': '#ff7700',
+          'fill-opacity': 0.5,
+        },
+      });
+      // コード値ポリゴンレイヤの作成
+      map.addSource('code-polygon', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+      map.addLayer({
+        id: 'code-polygon-fill',
+        type: 'fill',
+        source: 'code-polygon',
+        layout: {},
+        paint: {
+          'fill-color': '#0000ff',
+          'fill-opacity': 0.5,
+        },
+      });
+
+      // 初期値設定
+      const center = map.getCenter();
+      updateCenterCoords(center.lat, center.lng);
+      updateCodeValue(center.lat, center.lng);
+      drawCodePolygon();
+    });
+
+    map.on('moveend', () => {
+      const center = map.getCenter();
+      updateCenterCoords(center.lat, center.lng);
+      updateCodeValue(center.lat, center.lng);
+      drawCodePolygon();
+    });
+
+    // UI要素の取得
+    const typeSelect = document.getElementById('type');
+    const precisionSelect = document.getElementById('precision');
+    const codeValueInput = document.getElementById('code-value');
+    const centerCoordsInput = document.getElementById('center-coords');
+
+    const updatePrecisionOption = () => {
+      const type = typeSelect.value;
+      const precision = precisionSelect.value;
+      const precisionOptions = {
+        geohash: { min: 1, max: 12, default: 9 },
+        olc: { min: 2, max: 15, default: 11 },
+        quadkey: { min: 1, max: 23, default: 23 },
+        h3: { min: 0, max: 15, default: 14 },
+      }[type];
+      precisionSelect.innerHTML = '';
+      for (let i = precisionOptions.min; i <= precisionOptions.max; i++) {
+        if (type === 'olc' && [3, 5, 7, 9].includes(i)) {
+          continue;
+        }
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        precisionSelect.appendChild(option);
+      }
+      precisionSelect.value = precisionOptions.default;
+    };
+
+    const updateCenterCoords = (lat, lng) => {
+      centerCoordsInput.value = `${lat.toFixed(7)},${lng.toFixed(7)}`;
+    };
+
+    const updateCodeValue = (lat, lng) => {
+      const type = typeSelect.value;
+      const precision = precisionSelect.value;
+      let codeValue = '';
+      switch (type) {
+        case 'geohash':
+          codeValue = Geohash.encode(lat, lng, precision);
+          break;
+        case 'olc':
+          codeValue = OpenLocationCode.encode(lat, lng, precision);
+          break;
+        case 'quadkey':
+          codeValue = tileMath.pointToQuadkey(lng, lat, precision);
+          break;
+        case 'h3':
+          codeValue = h3.latLngToCell(lat, lng, precision);
+          break;
+      };
+      codeValueInput.value = codeValue;
+    };
+
+    const drawCodePolygon = () => {
+      const type = typeSelect.value;
+      const codeValue = codeValueInput.value;
+      const coordinates = [];
+      switch (type) {
+        case 'geohash':
+          const bounds = Geohash.bounds(codeValue);
+          coordinates.push(
+            [bounds.sw.lon, bounds.sw.lat],
+            [bounds.ne.lon, bounds.sw.lat],
+            [bounds.ne.lon, bounds.ne.lat],
+            [bounds.sw.lon, bounds.ne.lat],
+            [bounds.sw.lon, bounds.sw.lat],
+          );
+          break;
+        case 'olc':
+          const codeArea = OpenLocationCode.decode(codeValue);
+          coordinates.push(
+            [codeArea.longitudeLo, codeArea.latitudeLo],
+            [codeArea.longitudeHi, codeArea.latitudeLo],
+            [codeArea.longitudeHi, codeArea.latitudeHi],
+            [codeArea.longitudeLo, codeArea.latitudeHi],
+            [codeArea.longitudeLo, codeArea.latitudeLo],
+          );
+          break;
+        case 'quadkey':
+          const bbox = tileMath.quadkeyToBoundingBox(codeValue);
+          coordinates.push(
+            [bbox.west, bbox.south],
+            [bbox.east, bbox.south],
+            [bbox.east, bbox.north],
+            [bbox.west, bbox.north],
+            [bbox.west, bbox.south],
+          )
+          break;
+        case 'h3':
+          const hexBoundary = h3.cellToBoundary(codeValue);
+          coordinates.push(
+            ...hexBoundary.map(([lat, lng]) => [lng, lat]),
+            [hexBoundary[0][1], hexBoundary[0][0]],
+          );
+          break;
+      };
+      map.getSource('code-polygon').setData({
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          properties: { codeValue },
+          geometry: {
+              type: "Polygon",
+              coordinates: [coordinates],
+          },
+        }]
+      });
+    };
+
+    // イベントハンドラ設定
+    typeSelect.addEventListener('change', () => {
+      updatePrecisionOption();
+      const center = map.getCenter();
+      updateCodeValue(center.lat, center.lng);
+      drawCodePolygon();
+    });
+    precisionSelect.addEventListener('change', () => {
+      const center = map.getCenter();
+      updateCodeValue(center.lat, center.lng);
+      drawCodePolygon();
+    });
+  </script>
+</html>

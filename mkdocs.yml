@@ -16,6 +16,8 @@ nav:
   - 補足資料:
     - Geohashを活用した建物IDの付番: notebooks/geohash_id.ipynb
     - Geohashの桁数(精度)と矩形サイズの確認: notebooks/check_geohash_size.ipynb
+  - 追加サンプル:
+    - ジオコード種別・精度の比較: htmls/compare-geocode.md
 
 not_in_nav: |
   data
