@@ -16,6 +16,10 @@
       window.tileMath = tileMath;
     </script>
     <script src='https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js'></script>
+    <script type='module'>
+      import { Space } from 'https://unpkg.com/@reearth/spatial-id-sdk@0.0.0/dist/index.es.js';
+      window.Space = Space;
+    </script>
     <style>
       body { margin: 0; padding: 0; }
       html, body, #map { height: 100vh; }
@@ -71,6 +75,7 @@
             <option value="olc">Open Location Code</option>
             <option value="quadkey">Quadkey</option>
             <option value="h3">H3</option>
+            <option value="spatial-id">空間ID (TileHash)</option>
           </select>
         </fieldset>
         <fieldset class="inner">
@@ -94,7 +99,7 @@
       style: 'https://tile.openstreetmap.jp/styles/maptiler-basic-ja/style.json', // 地図のスタイル
       center: [139.762, 35.675], // 中心座標
       zoom: 19, // ズームレベル
-      minZoom: 4,
+      minZoom: 0,
       maxZoom: 21,
       dragRotate: false,
       attributionControl: false,
@@ -197,6 +202,7 @@
         olc: { min: 2, max: 15, default: 11 },
         quadkey: { min: 1, max: 23, default: 23 },
         h3: { min: 0, max: 15, default: 14 },
+        'spatial-id': { min: 1, max: 26, default: 23 },
       }[type];
       precisionSelect.innerHTML = '';
       for (let i = precisionOptions.min; i <= precisionOptions.max; i++) {
@@ -217,7 +223,7 @@
 
     const updateCodeValue = (lat, lng) => {
       const type = typeSelect.value;
-      const precision = precisionSelect.value;
+      const precision = parseInt(precisionSelect.value);
       let codeValue = '';
       switch (type) {
         case 'geohash':
@@ -231,6 +237,9 @@
           break;
         case 'h3':
           codeValue = h3.latLngToCell(lat, lng, precision);
+          break;
+        case 'spatial-id':
+          codeValue = new Space({lng: lng, lat: lat}, precision).id;
           break;
       };
       codeValueInput.value = codeValue;
@@ -277,6 +286,10 @@
             ...hexBoundary.map(([lat, lng]) => [lng, lat]),
             [hexBoundary[0][1], hexBoundary[0][0]],
           );
+          break;
+        case 'spatial-id':
+          const geoJsonCoords = new Space(codeValue).toGeoJSON().coordinates.flat();
+          coordinates.push(...geoJsonCoords);
           break;
       };
       map.getSource('code-polygon').setData({
