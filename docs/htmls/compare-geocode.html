@@ -190,7 +190,7 @@
         },
       });
       map.addLayer({
-        id: 'sibling-polygons-fill',
+        id: 'sibling-polygons-line',
         type: 'line',
         source: 'sibling-polygons',
         layout: {},
@@ -403,16 +403,16 @@
           },
         }]
       });
+      const siblingFeatures = (siblingCoordinatesArray.length > 0) ? [{
+        type: "Feature",
+        geometry: {
+            type: "MultiPolygon",
+            coordinates: [siblingCoordinatesArray],
+        },
+      }] : [];
       map.getSource('sibling-polygons').setData({
         type: "FeatureCollection",
-        features: [{
-          type: "Feature",
-          properties: { codeValue },
-          geometry: {
-              type: "MultiPolygon",
-              coordinates: [siblingCoordinatesArray],
-          },
-        }]
+        features: siblingFeatures,
       });
     };
 
