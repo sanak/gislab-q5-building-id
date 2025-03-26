@@ -94,6 +94,14 @@
     </div>
   </body>
   <script>
+    const precisionOptions = {
+      geohash: { min: 1, max: 12, default: 9 },
+      olc: { min: 2, max: 15, default: 11 },
+      quadkey: { min: 1, max: 23, default: 23 },
+      h3: { min: 0, max: 15, default: 14 },
+      'spatial-id': { min: 1, max: 26, default: 23 },
+    };
+
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://tile.openstreetmap.jp/styles/maptiler-basic-ja/style.json', // 地図のスタイル
@@ -173,19 +181,37 @@
           'fill-opacity': 0.5,
         },
       });
+      // 同階層ポリゴンレイヤの作成
+      map.addSource('sibling-polygons', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        },
+      });
+      map.addLayer({
+        id: 'sibling-polygons-fill',
+        type: 'line',
+        source: 'sibling-polygons',
+        layout: {},
+        paint: {
+          'line-color': '#888888',
+          'line-width': 1,
+        },
+      });
 
       // 初期値設定
       const center = map.getCenter();
       updateCenterCoords(center.lat, center.lng);
       updateCodeValue(center.lat, center.lng);
-      drawCodePolygon();
+      drawCodeAndSiblingPolygons();
     });
 
     map.on('moveend', () => {
       const center = map.getCenter();
       updateCenterCoords(center.lat, center.lng);
       updateCodeValue(center.lat, center.lng);
-      drawCodePolygon();
+      drawCodeAndSiblingPolygons();
     });
 
     // UI要素の取得
@@ -197,15 +223,9 @@
     const updatePrecisionOption = () => {
       const type = typeSelect.value;
       const precision = precisionSelect.value;
-      const precisionOptions = {
-        geohash: { min: 1, max: 12, default: 9 },
-        olc: { min: 2, max: 15, default: 11 },
-        quadkey: { min: 1, max: 23, default: 23 },
-        h3: { min: 0, max: 15, default: 14 },
-        'spatial-id': { min: 1, max: 26, default: 23 },
-      }[type];
+      const selectedPrecisionOptions = precisionOptions[type];
       precisionSelect.innerHTML = '';
-      for (let i = precisionOptions.min; i <= precisionOptions.max; i++) {
+      for (let i = selectedPrecisionOptions.min; i <= selectedPrecisionOptions.max; i++) {
         if (type === 'olc' && [3, 5, 7, 9].includes(i)) {
           continue;
         }
@@ -214,7 +234,7 @@
         option.textContent = i;
         precisionSelect.appendChild(option);
       }
-      precisionSelect.value = precisionOptions.default;
+      precisionSelect.value = selectedPrecisionOptions.default;
     };
 
     const updateCenterCoords = (lat, lng) => {
@@ -245,10 +265,14 @@
       codeValueInput.value = codeValue;
     };
 
-    const drawCodePolygon = () => {
+    const drawCodeAndSiblingPolygons = () => {
       const type = typeSelect.value;
       const codeValue = codeValueInput.value;
       const coordinates = [];
+      const selectedPrecisionOptions = precisionOptions[type];
+      const precision = parseInt(precisionSelect.value);
+      const hasSiblings = precision > selectedPrecisionOptions.min;
+      const siblingCoordinatesArray = [];
       switch (type) {
         case 'geohash':
           const bounds = Geohash.bounds(codeValue);
@@ -259,6 +283,23 @@
             [bounds.sw.lon, bounds.ne.lat],
             [bounds.sw.lon, bounds.sw.lat],
           );
+          if (hasSiblings) {
+            const geohashChars = '0123456789bcdefghjkmnpqrstuvwxyz';
+            for (let i = 0; i < geohashChars.length; i++) {
+              const siblingCode = codeValue.slice(0, -1) + geohashChars[i];
+              if (siblingCode === codeValue) {
+                continue;
+              }
+              const siblingBounds = Geohash.bounds(siblingCode);
+              siblingCoordinatesArray.push([
+                [siblingBounds.sw.lon, siblingBounds.sw.lat],
+                [siblingBounds.ne.lon, siblingBounds.sw.lat],
+                [siblingBounds.ne.lon, siblingBounds.ne.lat],
+                [siblingBounds.sw.lon, siblingBounds.ne.lat],
+                [siblingBounds.sw.lon, siblingBounds.sw.lat],
+              ]);
+            }
+          }
           break;
         case 'olc':
           const codeArea = OpenLocationCode.decode(codeValue);
@@ -269,6 +310,25 @@
             [codeArea.longitudeLo, codeArea.latitudeHi],
             [codeArea.longitudeLo, codeArea.latitudeLo],
           );
+          // precisionが11未満の場合、20x20=400とポリゴン数が多くなるため、
+          // 11以上の4x5=20の場合のみ同階層ポリゴンを表示する
+          if (hasSiblings && precision >= 11) {
+            const olcChars = '23456789CFGHJMPQRVWX';
+            for (let i = 0; i < olcChars.length; i++) {
+              const siblingCode = codeValue.slice(0, -1) + olcChars[i];
+              if (siblingCode === codeValue) {
+                continue;
+              }
+              const siblingArea = OpenLocationCode.decode(siblingCode);
+              siblingCoordinatesArray.push([
+                [siblingArea.longitudeLo, siblingArea.latitudeLo],
+                [siblingArea.longitudeHi, siblingArea.latitudeLo],
+                [siblingArea.longitudeHi, siblingArea.latitudeHi],
+                [siblingArea.longitudeLo, siblingArea.latitudeHi],
+                [siblingArea.longitudeLo, siblingArea.latitudeLo],
+              ]);
+            }
+          }
           break;
         case 'quadkey':
           const bbox = tileMath.quadkeyToBoundingBox(codeValue);
@@ -279,6 +339,23 @@
             [bbox.west, bbox.north],
             [bbox.west, bbox.south],
           )
+          if (hasSiblings) {
+            const quadkeyChars = '0123';
+            for (let i = 0; i < quadkeyChars.length; i++) {
+              const siblingCode = codeValue.slice(0, -1) + quadkeyChars[i];
+              if (siblingCode === codeValue) {
+                continue;
+              }
+              const siblingBbox = tileMath.quadkeyToBoundingBox(siblingCode);
+              siblingCoordinatesArray.push([
+                [siblingBbox.west, siblingBbox.south],
+                [siblingBbox.east, siblingBbox.south],
+                [siblingBbox.east, siblingBbox.north],
+                [siblingBbox.west, siblingBbox.north],
+                [siblingBbox.west, siblingBbox.south],
+              ]);
+            }
+          }
           break;
         case 'h3':
           const hexBoundary = h3.cellToBoundary(codeValue);
@@ -286,10 +363,33 @@
             ...hexBoundary.map(([lat, lng]) => [lng, lat]),
             [hexBoundary[0][1], hexBoundary[0][0]],
           );
+          if (hasSiblings) {
+            const parent = h3.cellToParent(codeValue, precision - 1);
+            const siblings = h3.cellToChildren(parent, precision);
+            for (const sibling of siblings) {
+              if (sibling === codeValue) {
+                continue;
+              }
+              siblingCoordinatesArray.push([
+                ...h3.cellToBoundary(sibling).map(([lat, lng]) => [lng, lat]),
+                [h3.cellToBoundary(sibling)[0][1], h3.cellToBoundary(sibling)[0][0]],
+              ]);
+            }
+          }
           break;
         case 'spatial-id':
           const geoJsonCoords = new Space(codeValue).toGeoJSON().coordinates.flat();
           coordinates.push(...geoJsonCoords);
+          if (hasSiblings) {
+            const parent = new Space(codeValue).parent();
+            const siblings = parent.children();
+            for (const sibling of siblings) {
+              if (sibling.id === codeValue || sibling.alt > 0) {
+                continue;
+              }
+              siblingCoordinatesArray.push(sibling.toGeoJSON().coordinates.flat());
+            }
+          }
           break;
       };
       map.getSource('code-polygon').setData({
@@ -303,6 +403,17 @@
           },
         }]
       });
+      map.getSource('sibling-polygons').setData({
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          properties: { codeValue },
+          geometry: {
+              type: "MultiPolygon",
+              coordinates: [siblingCoordinatesArray],
+          },
+        }]
+      });
     };
 
     // イベントハンドラ設定
@@ -310,12 +421,12 @@
       updatePrecisionOption();
       const center = map.getCenter();
       updateCodeValue(center.lat, center.lng);
-      drawCodePolygon();
+      drawCodeAndSiblingPolygons();
     });
     precisionSelect.addEventListener('change', () => {
       const center = map.getCenter();
       updateCodeValue(center.lat, center.lng);
-      drawCodePolygon();
+      drawCodeAndSiblingPolygons();
     });
   </script>
 </html>
